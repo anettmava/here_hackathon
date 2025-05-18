@@ -2,28 +2,26 @@ import os
 import math
 import requests
 import geopandas as gpd
-from shapely.geometry import Point
+from shapely.geometry import LineString
 from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
+import glob
 
-# === CONFIGURACIÓN ===
+# === CARGAR VARIABLES DE ENTORNO ===
 load_dotenv()
 api_key = os.getenv("HERE_API_KEY")
 if not api_key:
-    raise ValueError("❌ HERE_API_KEY no encontrado en el archivo .env")
+    raise ValueError("❌ HERE_API_KEY no encontrado en .env")
 
-# === COORDENADAS A VALIDAR ===
-latitude = 19.33573
-longitude = -99.57503
-user_point = Point(longitude, latitude)
+# === CREAR CARPETA PARA IMÁGENES CORREGIDAS ===
+os.makedirs("imagenes_segmentos", exist_ok=True)
 
-# === FUNCIONES PARA IMAGEN SATELITAL ===
+# === FUNCIONES ===
 def lat_lon_to_tile(lat, lon, zoom):
     lat = min(max(lat, -85.0511), 85.0511)
     lat_rad = math.radians(lat)
-    lon_rad = math.radians(lon)
     n = 2.0 ** zoom
     x = int((lon + 180.0) / 360.0 * n)
     y = int((1.0 - math.log(math.tan(lat_rad) + 1 / math.cos(lat_rad)) / math.pi) / 2.0 * n)
@@ -46,7 +44,7 @@ def fetch_satellite_tile(lat, lon, zoom, tile_format, api_key):
     url = f'https://maps.hereapi.com/v3/base/mc/{zoom}/{x}/{y}/{tile_format}?apiKey={api_key}&style=satellite.day&size=512'
     response = requests.get(url)
     if response.status_code != 200:
-        print("❌ Falló la descarga de imagen:", response.status_code)
+        print(f"❌ Falló la descarga de imagen: {response.status_code}")
         return None, None
     image = Image.open(BytesIO(response.content))
     return image, get_tile_bounds(x, y, zoom)
@@ -57,71 +55,111 @@ def latlon_to_pixel(lat, lon, bounds):
     y_rel = (lat1 - lat) / (lat1 - lat2)
     return int(x_rel * 512), int(y_rel * 512)
 
-# === CARGAR SEGMENTOS NAV ===
-nav_path = "STREETS_NAV/SREETS_NAV_4815075.geojson"
-if not os.path.exists(nav_path):
-    raise FileNotFoundError("❌ Archivo NAV no encontrado.")
+def calculate_angle(line: LineString):
+    coords = list(line.coords)
+    if len(coords) < 2:
+        return None
+    x1, y1 = coords[0]
+    x2, y2 = coords[-1]
+    return math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180
+
+# === ARCHIVO ===
+geojson_files = sorted(glob.glob("STREETS_NAV/*.geojson"))
+if not geojson_files:
+    raise FileNotFoundError("❌ No se encontró ningún archivo GeoJSON en STREETS_NAV/")
+nav_path = geojson_files[0]
+print(f"📄 Procesando archivo: {os.path.basename(nav_path)}")
 
 nav_gdf = gpd.read_file(nav_path)
 nav_gdf = nav_gdf[nav_gdf.geometry.type == "LineString"]
 if nav_gdf.empty:
     raise ValueError("❌ El archivo no contiene segmentos tipo LineString.")
 
-# Transformar a CRS proyectado para medir distancias
-nav_proj = nav_gdf.to_crs(epsg=3857)
-user_proj = gpd.GeoSeries([user_point], crs="EPSG:4326").to_crs(epsg=3857).iloc[0]
+nav_gdf_proj = nav_gdf.to_crs(epsg=3857)
+nav_gdf_proj["original_MULTIDIGIT"] = nav_gdf["MULTIDIGIT"].values
 
-# Calcular distancia del punto a todos los segmentos
-nav_proj["dist"] = nav_proj.geometry.distance(user_proj)
-closest_idx = nav_proj["dist"].idxmin()
-closest_seg = nav_gdf.loc[closest_idx]
-
-print(f"\n📍 Segmento más cercano (index {closest_idx})")
-print(f"link_id: {closest_seg['link_id']}")
-print(f"MULTIDIGIT actual: {closest_seg['MULTIDIGIT']}")
-
-# === MOSTRAR IMAGEN SATELITAL ===
+updated_segments = []
+imagenes_guardadas = 0  # contador para imágenes
 zoom = 18
-image, bounds = fetch_satellite_tile(latitude, longitude, zoom, 'png', api_key)
 
-if image:
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.imshow(image)
-    px, py = latlon_to_pixel(latitude, longitude, bounds)
-    ax.plot(px, py, 'ro', markersize=10)
-    ax.set_title(f"Segmento más cercano al punto ({latitude:.5f}, {longitude:.5f})")
-    ax.axis("off")
-    plt.tight_layout()
-    plt.show()
-    input("Presiona Enter para continuar...")
+for idx, segment in nav_gdf_proj.iterrows():
+    geom = segment.geometry
+    link_id = segment.get("link_id")
 
-# === PREGUNTA MANUAL DE VALIDACIÓN (FORZADA) ===
-while True:
-    respuesta = input("¿Este segmento está mal etiquetado como MULTIDIGIT? (s/n): ").strip().lower()
-    if respuesta in ["s", "n"]:
-        break
-    print("❌ Entrada no válida. Escribe 's' o 'n'.")
+    if geom.length < 5:
+        continue
 
-# === COMPARACIÓN, ACTUALIZACIÓN Y GUARDADO ===
-original = str(closest_seg["MULTIDIGIT"]).strip().upper()
-nuevo_valor = None
+    angle_segment = calculate_angle(geom)
+    if angle_segment is None:
+        continue
 
-if respuesta == "s":
-    if original in ["YES", "Y"]:
-        nuevo_valor = "N"
-        print("✏️ MULTIDIGIT actualizado: YES → NO")
-    else:
-        print("✅ MULTIDIGIT ya estaba en NO. No es necesario cambiarlo.")
-elif respuesta == "n":
-    if original in ["YES", "Y"]:
-        print("✅ MULTIDIGIT ya estaba en YES.")
-    else:
-        nuevo_valor = "Y"
-        print("✏️ MULTIDIGIT actualizado: NO → YES")
+    buffer = geom.buffer(25)
+    nearby = nav_gdf_proj[
+        (nav_gdf_proj.geometry.intersects(buffer)) &
+        (nav_gdf_proj["link_id"] != link_id) &
+        (nav_gdf_proj.index != idx)
+    ]
 
-# Si hay actualización, aplicar y guardar copia
-if nuevo_valor:
-    nav_gdf.loc[closest_idx, "MULTIDIGIT"] = nuevo_valor
-    output_path = "STREETS_NAV/ACTUALIZADO_SREETS_NAV_4815075.geojson"
+    valid_neighbors = []
+    for _, neighbor in nearby.iterrows():
+        angle_neighbor = calculate_angle(neighbor.geometry)
+        if angle_neighbor is None:
+            continue
+
+        angle_diff = abs(angle_segment - angle_neighbor)
+        if angle_diff > 90:
+            angle_diff = 180 - angle_diff
+
+        overlap = geom.intersection(neighbor.geometry)
+        overlap_ratio = overlap.length / geom.length if geom.length > 0 else 0
+        centroid_distance = geom.centroid.distance(neighbor.geometry.centroid)
+
+        print(f"→ Segmento {idx}: angle diff={angle_diff:.1f}°, overlap={overlap_ratio:.2f}, dist={centroid_distance:.1f}")
+
+        if angle_diff <= 20 and (overlap_ratio >= 0.05 or centroid_distance < 25):
+            valid_neighbors.append(neighbor)
+
+    inferred = "YES" if len(valid_neighbors) >= 1 else "NO"
+
+    original = str(segment["original_MULTIDIGIT"]).strip().upper()
+    if original not in ["YES", "Y", "NO", "N"]:
+        original = "NO"
+
+    was_correct = (
+        (inferred == "YES" and original in ["YES", "Y"]) or
+        (inferred == "NO" and original in ["NO", "N"])
+    )
+
+    if not was_correct:
+        nav_gdf.at[idx, "MULTIDIGIT"] = inferred
+        updated_segments.append(idx)
+
+        # Mostrar y guardar imagen solo si fue corregido y aún no se ha llegado al límite
+        if imagenes_guardadas < 20:
+            centroid = nav_gdf.at[idx, "geometry"].centroid
+            lat, lon = centroid.y, centroid.x
+            image, bounds = fetch_satellite_tile(lat, lon, zoom, 'png', api_key)
+            if image:
+                fig, ax = plt.subplots(figsize=(6, 6))
+                ax.imshow(image)
+                px, py = latlon_to_pixel(lat, lon, bounds)
+                ax.plot(px, py, 'ro', markersize=10)
+                ax.set_title(f"Segmento {idx} | MULTIDIGIT: {original} → {inferred} | Corregido")
+                ax.axis("off")
+                plt.tight_layout()
+                plt.savefig(f"imagenes_segmentos/segmento_{idx}.png")
+                plt.close()
+                imagenes_guardadas += 1
+
+                if imagenes_guardadas == 10:
+                    print("🛑 Límite de 10 imágenes alcanzado. No se guardarán más.")
+
+# === GUARDAR SI HAY CAMBIOS ===
+if updated_segments:
+    filename = os.path.basename(nav_path)
+    output_path = os.path.join("STREETS_NAV", f"ACTUALIZADO_{filename}")
     nav_gdf.to_file(output_path, driver="GeoJSON")
-    print(f"💾 Archivo actualizado guardado en: {output_path}")
+    print(f"\n💾 Archivo actualizado guardado en: {output_path}")
+    print(f"🔁 Segmentos corregidos: {len(updated_segments)}")
+else:
+    print("✅ No se detectaron cambios en MULTIDIGIT.")
