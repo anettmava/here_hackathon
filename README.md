@@ -29,6 +29,12 @@ POI datasets often contain errors due to lack of updates or incorrect geocoding.
 
 ---
 
+## Video and Presentation
+📽️ **[Watch the demo video](HACKATHON%20PRESENTATION.mp4)**  
+📄 **[View the presentation PDF](HERE%20Hackathon%20Solution.pdf)**
+
+---
+
 
 # HERE Hackathon: Validación de POIs con Satélite y Geometría
 
@@ -96,5 +102,3 @@ python nombre_del_archivo.py
 - Daniel Eden Wynter González
 - Anett Martínez Vázquez
 
-📽️ **[Watch the demo video](HACKATHON%20PRESENTATION.mp4)**  
-📄 **[View the presentation PDF](HERE%20Hackathon%20Solution.pdf)**
