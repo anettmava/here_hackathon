@@ -115,8 +115,8 @@ for _, row in gdf_pois.iterrows():
 
 # 11. Guardar archivo CSV
 gdf_pois[['POI_ID', 'POI_NAME', 'geometry', 'EVALUATION', 'TILE_WKT']].to_csv("POIs_Evaluados.csv", index=False)
-print("✅ Archivo 'POIs_Evaluados.csv' generado.")
+print("Archivo 'POIs_Evaluados.csv' generado.")
 
 # 12. Guardar mapa
 m.save("mapa_pois.html")
-print("✅ Mapa generado con evaluación y tile WKT: 'mapa_pois.html'")
+print("Mapa generado con evaluación y tile WKT: 'mapa_pois.html'")
