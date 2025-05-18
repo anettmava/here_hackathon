@@ -3,3 +3,5 @@ STREETS_NAMING_ADDRESSING/
 STREETS_NAV/
 venv/
 .env
+mapa_pois.html
+POIs_Evaluados.csv
