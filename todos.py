@@ -90,19 +90,22 @@ gdf_pois = gpd.GeoDataFrame(df_merge, geometry='geometry', crs=gdf_calles_proj.c
 gdf_pois = gdf_pois.to_crs(epsg=3857)
 gdf_pois['geometry'] = gdf_pois['geometry'].centroid
 
-# Evaluación MULTIDIGIT más precisa (basada en longitud)
-gdf_pois['EVAL_MULTIDIGIT'] = gdf_pois.apply(
-    lambda row: 'ok' if row['segment_length'] < 20 else ('delete' if str(row['MULTIDIGIT']).strip().upper() in ['Y', 'YES'] else 'ok'),
-    axis=1
-)
+# Evaluación MULTIDIGIT más estricta
+
+def evaluate_multidigit(row):
+    if row['segment_length'] >= 50 and str(row['MULTIDIGIT']).strip().upper() in ['Y', 'YES']:
+        return 'delete'
+    return 'ok'
+
+gdf_pois['EVAL_MULTIDIGIT'] = gdf_pois.apply(evaluate_multidigit, axis=1)
 
 # Declaración de lado
 gdf_pois['PERCFRREF_NORM'] = gdf_pois['PERCFRREF'] / 1000.0
 
 def lado_declaro(pct):
     if pd.isna(pct): return 'unknown'
-    if pct < 0.1: return 'L'
-    if pct > 0.9: return 'R'
+    if pct < 0.01: return 'L'
+    if pct > 0.99: return 'R'
     return 'center'
 
 gdf_pois['DECLARED_SIDE'] = gdf_pois['PERCFRREF_NORM'].apply(lado_declaro)
