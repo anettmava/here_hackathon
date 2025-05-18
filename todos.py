@@ -18,6 +18,10 @@ if not api_key:
 
 # === FUNCIONES GEOGRÁFICAS ===
 def calculate_angle(line: LineString):
+    """
+    Calcula el ángulo (en grados, 0-180) de un segmento LineString respecto al eje X.
+    Si el segmento tiene menos de dos puntos, devuelve None.
+    """
     coords = list(line.coords)
     if len(coords) < 2:
         return None
@@ -26,6 +30,9 @@ def calculate_angle(line: LineString):
     return math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180
 
 def lat_lon_to_tile(lat, lon, zoom):
+    """
+    Convierte una latitud y longitud a coordenadas de tile (x, y) para un nivel de zoom dado.
+    """
     lat = min(max(lat, -85.0511), 85.0511)
     lat_rad = math.radians(lat)
     n = 2.0 ** zoom
@@ -34,6 +41,9 @@ def lat_lon_to_tile(lat, lon, zoom):
     return x, y
 
 def tile_coords_to_lat_lon(x, y, zoom):
+    """
+    Convierte coordenadas de tile (x, y) y nivel de zoom a latitud y longitud.
+    """
     n = 2.0 ** zoom
     lon_deg = x / n * 360.0 - 180.0
     lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * y / n)))
@@ -41,11 +51,18 @@ def tile_coords_to_lat_lon(x, y, zoom):
     return lat_deg, lon_deg
 
 def get_tile_bounds(x, y, zoom):
+    """
+    Devuelve los límites geográficos (lat1, lon1, lat2, lon2) de un tile.
+    """
     lat1, lon1 = tile_coords_to_lat_lon(x, y, zoom)
     lat2, lon2 = tile_coords_to_lat_lon(x + 1, y + 1, zoom)
     return lat1, lon1, lat2, lon2
 
 def fetch_satellite_tile(lat, lon, zoom, tile_format):
+    """
+    Descarga una imagen satelital de HERE para una latitud, longitud y zoom dados.
+    Devuelve la imagen y los límites geográficos del tile.
+    """
     x, y = lat_lon_to_tile(lat, lon, zoom)
     url = f'https://maps.hereapi.com/v3/base/mc/{zoom}/{x}/{y}/{tile_format}?apiKey={api_key}&style=satellite.day&size=512'
     response = requests.get(url)
@@ -55,6 +72,10 @@ def fetch_satellite_tile(lat, lon, zoom, tile_format):
     return image, get_tile_bounds(x, y, zoom)
 
 def latlon_to_pixel(lat, lon, bounds):
+    """
+    Convierte una latitud y longitud a coordenadas de píxel (x, y) dentro de una imagen de 512x512 píxeles,
+    usando los límites geográficos del tile.
+    """
     lat1, lon1, lat2, lon2 = bounds
     x_rel = (lon - lon1) / (lon2 - lon1)
     y_rel = (lat1 - lat) / (lat1 - lat2)
@@ -93,6 +114,9 @@ gdf_pois['geometry'] = gdf_pois['geometry'].centroid
 # Evaluación MULTIDIGIT más estricta
 
 def evaluate_multidigit(row):
+    """
+    Marca como 'delete' los POIs en segmentos largos (>=50m) y MULTIDIGIT=Y/YES.
+    """
     if row['segment_length'] >= 50 and str(row['MULTIDIGIT']).strip().upper() in ['Y', 'YES']:
         return 'delete'
     return 'ok'
@@ -103,6 +127,9 @@ gdf_pois['EVAL_MULTIDIGIT'] = gdf_pois.apply(evaluate_multidigit, axis=1)
 gdf_pois['PERCFRREF_NORM'] = gdf_pois['PERCFRREF'] / 1000.0
 
 def lado_declaro(pct):
+    """
+    Determina el lado declarado del POI según el valor normalizado de PERCFRREF.
+    """
     if pd.isna(pct): return 'unknown'
     if pct < 0.01: return 'L'
     if pct > 0.99: return 'R'
@@ -116,6 +143,9 @@ gdf_pois = gdf_pois.merge(gdf_calles[['link_id', 'geometry']], on='link_id', how
 
 # Cálculo de lado geométrico
 def calcular_lado_geometrico(poi_point, line):
+    """
+    Determina el lado geométrico del POI respecto a la calle usando el producto cruzado.
+    """
     if not isinstance(line, LineString) or not isinstance(poi_point, Point):
         return 'unknown'
     coords = list(line.coords)
@@ -131,6 +161,9 @@ def calcular_lado_geometrico(poi_point, line):
 gdf_pois['GEOMETRIC_SIDE'] = gdf_pois.apply(lambda row: calcular_lado_geometrico(row.geometry, row.geometry_right), axis=1)
 
 def evaluar_discrepancia(declared, geo):
+    """
+    Marca como 'relink' si el lado declarado y el geométrico son diferentes (y ambos válidos).
+    """
     if declared in ['center', 'unknown'] or geo in ['center', 'unknown']:
         return 'ok'
     elif declared != geo:
