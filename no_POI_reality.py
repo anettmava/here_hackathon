@@ -13,6 +13,9 @@ here_api_key = os.getenv("HERE_API_KEY")
 
 # Funciones para tile y WKT con HERE
 def lat_lon_to_tile(lat, lon, zoom):
+    """
+    Convierte latitud y longitud a coordenadas de tile (x, y) para un nivel de zoom dado.
+    """
     lat_rad = math.radians(lat)
     n = 2.0 ** zoom
     x = int((lon + 180.0) / 360.0 * n)
@@ -20,6 +23,9 @@ def lat_lon_to_tile(lat, lon, zoom):
     return x, y
 
 def tile_coords_to_lat_lon(x, y, zoom):
+    """
+    Convierte coordenadas de tile (x, y) y nivel de zoom a latitud y longitud.
+    """
     n = 2.0 ** zoom
     lon_deg = x / n * 360.0 - 180.0
     lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * y / n)))
@@ -27,6 +33,9 @@ def tile_coords_to_lat_lon(x, y, zoom):
     return (lat_deg, lon_deg)
 
 def get_tile_bounds(x, y, zoom):
+    """
+    Devuelve los límites geográficos de un tile como cuatro esquinas (lat, lon).
+    """
     lat1, lon1 = tile_coords_to_lat_lon(x, y, zoom)
     lat2, lon2 = tile_coords_to_lat_lon(x + 1, y, zoom)
     lat3, lon3 = tile_coords_to_lat_lon(x + 1, y + 1, zoom)
@@ -34,6 +43,9 @@ def get_tile_bounds(x, y, zoom):
     return (lat1, lon1), (lat2, lon2), (lat3, lon3), (lat4, lon4)
 
 def create_wkt_polygon(bounds):
+    """
+    Crea un polígono WKT a partir de las esquinas de un tile.
+    """
     (lat1, lon1), (lat2, lon2), (lat3, lon3), (lat4, lon4) = bounds
     return f"POLYGON(({lon1} {lat1}, {lon2} {lat2}, {lon3} {lat3}, {lon4} {lat4}, {lon1} {lat1}))"
 

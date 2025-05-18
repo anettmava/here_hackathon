@@ -146,6 +146,12 @@ def lat_lon_to_pixel(lat, lon, bounds, tile_size=512):
 
 # === Obtener primer POI con relink ===
 relink_pois = gdf_pois[gdf_pois['LOCATION_STATUS'] == 'relink']
+"""
+Esta sección busca el primer POI cuya ubicación declarada (lado de la calle) no coincide con el lado geométrico calculado,
+es decir, aquellos marcados como 'relink'. Luego descarga el tile satelital correspondiente usando la API de HERE,
+calcula la posición del POI dentro de la imagen y genera una visualización donde el POI se marca con un punto rojo.
+Esto permite revisar visualmente los casos donde hay discrepancia entre el lado declarado y el lado real según la geometría.
+"""
 if not relink_pois.empty:
     first = relink_pois.iloc[0]
     lat = first.geometry.y

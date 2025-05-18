@@ -5,6 +5,7 @@ import geopandas as gpd
 from shapely.geometry import LineString
 import folium
 
+# Función para calcular el ángulo de un segmento LineString respecto al eje X
 def calculate_angle(line: LineString):
     coords = list(line.coords)
     if len(coords) < 2:
@@ -13,18 +14,22 @@ def calculate_angle(line: LineString):
     x2, y2 = coords[-1]
     return math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180
 
+# Buscar archivos GeoJSON de calles de navegación
 archivos = sorted(glob.glob("STREETS_NAV/*.geojson"))
 if not archivos:
     raise FileNotFoundError("No se encontró ningún archivo en STREETS_NAV/")
 
+# Seleccionar el primer archivo encontrado
 archivo = archivos[0]
 print(f"Analizando archivo: {os.path.basename(archivo)}")
 
+# Leer el archivo GeoJSON como GeoDataFrame
 gdf = gpd.read_file(archivo)
 gdf = gdf[gdf.geometry.type == "LineString"]
 gdf = gdf.to_crs(epsg=3857)
 gdf["EXCEPTION_LEGIT"] = "NO"
 
+# Recorrer cada segmento de calle
 for idx, segment in gdf.iterrows():
     geom = segment.geometry
     link_id = segment.get("link_id")
@@ -48,7 +53,8 @@ for idx, segment in gdf.iterrows():
         angle_neighbor = calculate_angle(neighbor.geometry)
         if angle_neighbor is None:
             continue
-
+        
+        # Calcular diferencia de ángulo
         angle_diff = abs(angle_segment - angle_neighbor)
         if angle_diff > 90:
             angle_diff = 180 - angle_diff
@@ -63,7 +69,8 @@ for idx, segment in gdf.iterrows():
     multidigit = str(segment.get("MULTIDIGIT", "NO")).strip().upper()
     if multidigit in ["YES", "Y"] and len(valid_neighbors) >= 1 and geom.length > 10:
         gdf.at[idx, "EXCEPTION_LEGIT"] = "YES"
-
+        
+# Guardar el resultado en un nuevo archivo GeoJSON
 output_path = os.path.join("STREETS_NAV", f"EXCEPCIONES_{os.path.basename(archivo)}")
 gdf.to_file(output_path, driver="GeoJSON")
 
