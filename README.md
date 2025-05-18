@@ -96,6 +96,14 @@ HERE_API_KEY=tu_clave_aquí
 ```env
 python nombre_del_archivo.py
 ```
+---
+
+## Video y Presentación
+📽️ **[Watch the demo video](HACKATHON%20PRESENTATION.mp4)**  
+📄 **[View the presentation PDF](HERE%20Hackathon%20Solution.pdf)**
+
+---
+
 ## 👩🏽 Team Members/ Autores
 - Sarah Sophia Gutiérrez Villalpando
 - Annete Montserrat Cedillo Mariscal
