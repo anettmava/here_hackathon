@@ -1,3 +1,8 @@
+# HERE Hackathon: POI Validation with Satellite Imagery and Geometry
+This project was developed for Guadalahacks Hackathon, sponsored by HERE Technologies, to improve the accuracy of Points of Interest (POIs) in urban mapping. By combining satellite imagery with geometric analysis, we detect common mapping issues such as outdated locations, incorrect geolocation, or wrong street-side association.
+
+---
+
 # HERE Hackathon: Validación de POIs con Satélite y Geometría
 
 Este proyecto automatiza la validación de Puntos de Interés (POIs) en una red vial utilizando imágenes satelitales de HERE y análisis geométrico. Fue desarrollado para el hackathon Guadalahacks patrocinado por HERE con el objetivo de detectar errores de mapeo comunes como POIs desactualizados, ubicaciones incorrectas o asociaciones erróneas al lado de la calle.
