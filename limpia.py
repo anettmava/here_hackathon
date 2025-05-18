@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import unicodedata
 import re
-#
+#Este script limpia la base de datos reemplazando caracteres especiales, espacios y columnas excepciones.
 def limpiar_tabla(df):
     def limpiar_celda(celda):
         if pd.isna(celda):
@@ -25,7 +25,7 @@ def limpiar_tabla(df):
 
     df = df.applymap(limpiar_celda)
     
-    # Eliminar columna ACC_TYPE si existe
+    # Eliminar columna ACC_TYPE (hasta en la documentacion dice que no se utiliza)
     if "ACC_TYPE" in df.columns:
         df.drop(columns=["ACC_TYPE"], inplace=True)
 
