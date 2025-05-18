@@ -77,7 +77,7 @@ gdf_pois['TILE_WKT'] = gdf_pois['geometry'].apply(
 
 # 8. Filtrar sospechosos
 gdf_pois_sospechosos = gdf_pois[gdf_pois['EVALUATION'] == 'delete']
-print(f"🔍 Total de POIs sospechosos (MULTIDIGIT = YES): {len(gdf_pois_sospechosos)}")
+print(f"Total de POIs sospechosos (MULTIDIGIT = YES): {len(gdf_pois_sospechosos)}")
 
 # 9. Visualización con HERE
 centro = [gdf_pois.geometry.y.mean(), gdf_pois.geometry.x.mean()]
@@ -112,6 +112,10 @@ for _, row in gdf_pois.iterrows():
         popup=popup_text,
         icon=folium.Icon(color=color, icon='info-sign')
     ).add_to(m)
+
+# Imprimir cantidad de POIs en rojo
+#num_rojos = (gdf_pois['EVALUATION'] == 'delete').sum()
+#print(f"Cantidad de POIs a eliminar: {num_rojos}")
 
 # 11. Guardar archivo CSV
 gdf_pois[['POI_ID', 'POI_NAME', 'geometry', 'EVALUATION', 'TILE_WKT']].to_csv("POIs_Evaluados.csv", index=False)
