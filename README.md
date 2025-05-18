@@ -15,6 +15,18 @@ POI datasets often contain errors due to lack of updates or incorrect geocoding.
 
 ---
 
+## ⚙️ What the Pipeline Does
+
+- Joins POI and street segment data using `LINK_ID` (CSV + GeoJSON).
+- Computes the centroid of each segment to place the POI.
+- Fetches HERE satellite tiles to visually verify POI positions.
+- Evaluates geometric side using cross-product vector analysis.
+- Flags mismatches between reported side and actual geometric side (relink cases).
+- Generates satellite snapshots with visual markers of problematic POIs.
+-  Exports outputs as `.csv`, `.geojson`, and `.png`.
+
+---
+
 
 # HERE Hackathon: Validación de POIs con Satélite y Geometría
 
