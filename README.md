@@ -88,7 +88,7 @@ HERE_API_KEY=tu_clave_aquí
 ```env
 python nombre_del_archivo.py
 ```
-## 👩🏽 Autores
+## 👩🏽 Team Members/ Autores
 - Sarah Sophia Gutiérrez Villalpando
 - Annete Montserrat Cedillo Mariscal
 - Daniel Eden Wynter González
