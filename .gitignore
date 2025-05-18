@@ -4,3 +4,4 @@ STREETS_NAV/
 venv/
 .env
 mapa_pois.html
+POIs_Evaluados.csv
