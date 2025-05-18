@@ -34,6 +34,22 @@ Este proyecto automatiza la validación de Puntos de Interés (POIs) en una red 
 
 ---
 
+## ▶️ How to Run It
+
+1. Install dependencies:
+```bash
+pip install geopandas pandas shapely requests pillow matplotlib python-dotenv
+```
+
+2. Create a .env file and add your HERE API Key:
+```env
+HERE_API_KEY=tu_clave_aquí
+```
+3. Run the script:
+```env
+python nombre_del_archivo.py
+```
+
 ## 🧩 Problema que resolvemos
 
 Los conjuntos de datos de POIs pueden contener errores debido a actualizaciones faltantes o geolocalización incorrecta. Este pipeline identifica cuatro tipos de problemas:
