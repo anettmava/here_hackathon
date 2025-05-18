@@ -61,13 +61,13 @@ def latlon_to_pixel(lat, lon, bounds):
     return int(x_rel * 512), int(y_rel * 512)
 
 # === CARGA DE DATOS ===
-csv_files = sorted(glob.glob("POIs/*.csv"))[:1]
+csv_files = sorted(glob.glob("POIs/*.csv"))
 df_pois = pd.concat([pd.read_csv(f) for f in csv_files], ignore_index=True)
 
-geojson_calles = sorted(glob.glob("STREETS_NAMING_ADDRESSING/*.geojson"))[:1]
+geojson_calles = sorted(glob.glob("STREETS_NAMING_ADDRESSING/*.geojson"))
 gdf_calles = gpd.GeoDataFrame(pd.concat([gpd.read_file(f) for f in geojson_calles], ignore_index=True))
 
-geojson_nav = sorted(glob.glob("STREETS_NAV/*.geojson"))[:1]
+geojson_nav = sorted(glob.glob("STREETS_NAV/*.geojson"))
 gdf_nav = gpd.GeoDataFrame(pd.concat([gpd.read_file(f) for f in geojson_nav], ignore_index=True))
 
 if 'link_id' in gdf_nav.columns and 'MULTIDIGIT' in gdf_nav.columns:
