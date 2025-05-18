@@ -9,16 +9,16 @@ import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 import glob
 
-# === CARGAR VARIABLES DE ENTORNO ===
+# CARGAR VARIABLES DE ENTORNO
 load_dotenv()
 api_key = os.getenv("HERE_API_KEY")
 if not api_key:
-    raise ValueError("❌ HERE_API_KEY no encontrado en .env")
+    raise ValueError("HERE_API_KEY no encontrado en .env")
 
-# === CREAR CARPETA PARA IMÁGENES CORREGIDAS ===
+# CREAR CARPETA PARA IMÁGENES CORREGIDAS
 os.makedirs("imagenes_segmentos", exist_ok=True)
 
-# === FUNCIONES ===
+# FUNCIONES
 def lat_lon_to_tile(lat, lon, zoom):
     lat = min(max(lat, -85.0511), 85.0511)
     lat_rad = math.radians(lat)
@@ -40,22 +40,34 @@ def get_tile_bounds(x, y, zoom):
     return lat1, lon1, lat2, lon2
 
 def fetch_satellite_tile(lat, lon, zoom, tile_format, api_key):
+    """
+    Descarga una imagen del tile para una latitud, longitud y zoom dados,
+    usando la API de HERE. Devuelve la imagen y los límites geográficos del tile.
+    """
     x, y = lat_lon_to_tile(lat, lon, zoom)
     url = f'https://maps.hereapi.com/v3/base/mc/{zoom}/{x}/{y}/{tile_format}?apiKey={api_key}&style=satellite.day&size=512'
     response = requests.get(url)
     if response.status_code != 200:
-        print(f"❌ Falló la descarga de imagen: {response.status_code}")
+        print(f"Falló la descarga de imagen: {response.status_code}")
         return None, None
     image = Image.open(BytesIO(response.content))
     return image, get_tile_bounds(x, y, zoom)
 
 def latlon_to_pixel(lat, lon, bounds):
+    """
+    Convierte una latitud y longitud a coordenadas de píxel (x, y) dentro de una imagen de 512x512 píxeles,
+    usando los límites geográficos del tile.
+    """
     lat1, lon1, lat2, lon2 = bounds
     x_rel = (lon - lon1) / (lon2 - lon1)
     y_rel = (lat1 - lat) / (lat1 - lat2)
     return int(x_rel * 512), int(y_rel * 512)
 
 def calculate_angle(line: LineString):
+    """
+    Calcula el ángulo (en grados, 0-180) del segmento LineString respecto al eje X.
+    Si el segmento tiene menos de dos puntos, devuelve None.
+    """
     coords = list(line.coords)
     if len(coords) < 2:
         return None
@@ -63,17 +75,17 @@ def calculate_angle(line: LineString):
     x2, y2 = coords[-1]
     return math.degrees(math.atan2(y2 - y1, x2 - x1)) % 180
 
-# === ARCHIVO ===
+# ARCHIVO 
 geojson_files = sorted(glob.glob("STREETS_NAV/*.geojson"))
 if not geojson_files:
-    raise FileNotFoundError("❌ No se encontró ningún archivo GeoJSON en STREETS_NAV/")
+    raise FileNotFoundError("No se encontró ningún archivo GeoJSON en STREETS_NAV/")
 nav_path = geojson_files[0]
-print(f"📄 Procesando archivo: {os.path.basename(nav_path)}")
+print(f"Procesando archivo: {os.path.basename(nav_path)}")
 
 nav_gdf = gpd.read_file(nav_path)
 nav_gdf = nav_gdf[nav_gdf.geometry.type == "LineString"]
 if nav_gdf.empty:
-    raise ValueError("❌ El archivo no contiene segmentos tipo LineString.")
+    raise ValueError("El archivo no contiene segmentos tipo LineString.")
 
 nav_gdf_proj = nav_gdf.to_crs(epsg=3857)
 nav_gdf_proj["original_MULTIDIGIT"] = nav_gdf["MULTIDIGIT"].values
@@ -152,14 +164,14 @@ for idx, segment in nav_gdf_proj.iterrows():
                 imagenes_guardadas += 1
 
                 if imagenes_guardadas == 10:
-                    print("🛑 Límite de 10 imágenes alcanzado. No se guardarán más.")
+                    print("Límite de 10 imágenes alcanzado. No se guardarán más.")
 
-# === GUARDAR SI HAY CAMBIOS ===
+# GUARDAR SI HAY CAMBIOS
 if updated_segments:
     filename = os.path.basename(nav_path)
     output_path = os.path.join("STREETS_NAV", f"ACTUALIZADO_{filename}")
     nav_gdf.to_file(output_path, driver="GeoJSON")
-    print(f"\n💾 Archivo actualizado guardado en: {output_path}")
-    print(f"🔁 Segmentos corregidos: {len(updated_segments)}")
+    print(f"\n Archivo actualizado guardado en: {output_path}")
+    print(f" Segmentos corregidos: {len(updated_segments)}")
 else:
-    print("✅ No se detectaron cambios en MULTIDIGIT.")
+    print("No se detectaron cambios en MULTIDIGIT.")
