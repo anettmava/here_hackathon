@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import unicodedata
 import re
-
+#
 def limpiar_tabla(df):
     def limpiar_celda(celda):
         if pd.isna(celda):
