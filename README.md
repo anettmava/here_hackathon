@@ -3,6 +3,19 @@ This project was developed for Guadalahacks Hackathon, sponsored by HERE Technol
 
 ---
 
+## 🧩 Problem We Solve
+
+POI datasets often contain errors due to lack of updates or incorrect geocoding. Our pipeline identifies four key issues:
+
+1. **Nonexistent POI** – The place no longer exists or has been removed.
+2. **Incorrect Location** – The POI is placed far from its actual location or is incorrectly assigned.
+3. **Wrong Street Side** – The POI is linked to the wrong side (Left/Right) of the road segment.
+
+4. **Legitimate Exception** – The POI looks suspicious but is actually valid.
+
+---
+
+
 # HERE Hackathon: Validación de POIs con Satélite y Geometría
 
 Este proyecto automatiza la validación de Puntos de Interés (POIs) en una red vial utilizando imágenes satelitales de HERE y análisis geométrico. Fue desarrollado para el hackathon Guadalahacks patrocinado por HERE con el objetivo de detectar errores de mapeo comunes como POIs desactualizados, ubicaciones incorrectas o asociaciones erróneas al lado de la calle.
