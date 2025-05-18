@@ -12,7 +12,7 @@ load_dotenv()
 api_key = os.getenv("HERE_API_KEY")
 
 if not api_key:
-    raise ValueError("❌ No se encontró HERE_API_KEY en el archivo .env")
+    raise ValueError("No se encontró HERE_API_KEY en el archivo .env")
 
 # === FUNCIONES ===
 

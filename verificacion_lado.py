@@ -111,6 +111,10 @@ if response.status_code == 200:
     print(f"Imagen satelital del POI {relink_poi['POI_ID']} guardada como 'primer_poi_relink.jpg'")
 
 def lat_lon_to_tile(lat, lon, zoom):
+    """
+    Convierte una latitud y longitud a coordenadas de tile (x, y) para un nivel de zoom dado.
+    Esto permite identificar en qué tile se encuentra un punto.
+    """
     lat_rad = math.radians(lat)
     lon_rad = math.radians(lon)
     n = 2.0 ** zoom
@@ -119,6 +123,10 @@ def lat_lon_to_tile(lat, lon, zoom):
     return x, y
 
 def tile_coords_to_bounds(x, y, zoom):
+    """
+    Calcula los límites geográficos (latitud y longitud) de un tile dado por sus coordenadas (x, y) y nivel de zoom.
+    Devuelve (lat1, lon1, lat2, lon2) donde (lat1, lon1) es la esquina superior izquierda y (lat2, lon2) la inferior derecha.
+    """
     n = 2.0 ** zoom
     lon1 = x / n * 360.0 - 180.0
     lon2 = (x + 1) / n * 360.0 - 180.0
@@ -127,6 +135,10 @@ def tile_coords_to_bounds(x, y, zoom):
     return lat1, lon1, lat2, lon2
 
 def lat_lon_to_pixel(lat, lon, bounds, tile_size=512):
+    """
+    Convierte una latitud y longitud a coordenadas de píxel (x, y) dentro de un tile de tamaño tile_size,
+    usando los límites geográficos del tile.
+    """
     lat1, lon1, lat2, lon2 = bounds
     x = int(((lon - lon1) / (lon2 - lon1)) * tile_size)
     y = int(((lat1 - lat) / (lat1 - lat2)) * tile_size)

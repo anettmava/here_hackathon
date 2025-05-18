@@ -7,3 +7,7 @@ mapa_pois.html
 POIs_Evaluados.csv
 imagenes_segmentos/
 docs/
+POIs_clasificados.geojson
+POIs_lado_incorrecto.geojson
+POIs_side_evaluation.csv
+primer_poi_relink_marcado.png
